@@ -91,9 +91,11 @@ button:active{transform:scale(.98)}
   <div class="card">
     <div id="loginMsg"></div>
     <label>氏名</label>
-    <input id="u" autocomplete="username" placeholder="佐藤 英匡">
+    <input id="u" autocomplete="username" autocapitalize="off" autocorrect="off"
+           spellcheck="false" placeholder="佐藤 英匡">
     <label>パスワード</label>
-    <input id="p" type="password" autocomplete="current-password">
+    <input id="p" type="password" autocomplete="current-password" autocapitalize="off"
+           autocorrect="off" spellcheck="false" inputmode="text">
     <div style="height:14px"></div>
     <button class="btn-p" onclick="login()">ログイン</button>
     <div class="sub"><span class="link" onclick="showReset()">パスワードをお忘れの方</span></div>
@@ -141,13 +143,18 @@ function api(params){
   });
 }
 
+function nfkc(s){
+  s=String(s==null?'':s);
+  try{ s=s.normalize('NFKC') }catch(e){}
+  return s;
+}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
 // ===== ログイン =====
 async function login(){
-  var u=document.getElementById('u').value.trim();
-  var p=document.getElementById('p').value;
+  var u=nfkc(document.getElementById('u').value).replace(/[\s\u3000]+/g,'');
+  var p=nfkc(document.getElementById('p').value).trim();
   if(!u||!p){return note('loginMsg','err','氏名とパスワードを入力してください')}
   note('loginMsg','','<div class="loading">認証中…</div>');
   try{
@@ -413,8 +420,8 @@ function showReset(){
 function closeReset(){document.getElementById('resetBox').innerHTML=''}
 
 async function doReset(){
-  var u=document.getElementById('r_user').value.trim();
-  var m=document.getElementById('r_mail').value.trim();
+  var u=nfkc(document.getElementById('r_user').value).replace(/[\s\u3000]+/g,'');
+  var m=nfkc(document.getElementById('r_mail').value).trim();
   if(!u||!m) return note('resetMsg','err','氏名とメールアドレスを入力してください');
   note('resetMsg','','<div class="loading" style="padding:10px">送信中…</div>');
   try{
