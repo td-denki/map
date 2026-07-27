@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>契約事業所 住所録 | 匡電気管理事務所</title>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root{
   --navy:#2E3578; --navy-d:#232a5e; --navy-l:#eceef7;
@@ -71,13 +70,6 @@ button:active{transform:scale(.98)}
   color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700}
 .gear{background:none;border:none;color:#fff;font-size:18px;padding:0 4px;cursor:pointer;line-height:1}
 .sub{font-size:12px;color:var(--sub);margin-top:10px;text-align:center}
-body{padding-bottom:env(safe-area-inset-bottom)}
-header{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(28,31,51,.92);
-  color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:200;opacity:0;
-  transition:opacity .2s;pointer-events:none;max-width:88%;text-align:center}
-.toast.on{opacity:1}
-.btn-out{color:#a32d2d;border-color:#f0cfcf;background:#fff;width:100%;margin-top:14px}
 </style>
 </head>
 <body>
@@ -87,16 +79,10 @@ header{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16
   <h1 id="ttl">契約事業所 住所録</h1>
   <span class="who" id="who"></span>
   <button class="gear hide" id="gearBtn" onclick="showAccount()" title="アカウント設定">&#9881;</button>
-  <button class="gear hide" id="closeBtn" onclick="closeLiff()" title="閉じる">&#10005;</button>
 </header>
 
-<!-- 起動時（保存済みログインの確認中） -->
-<div class="wrap" id="bootView">
-  <div class="loading">ログイン情報を確認中…</div>
-</div>
-
 <!-- ログイン -->
-<div class="wrap hide" id="loginView">
+<div class="wrap" id="loginView">
   <div class="brand">
     <div id="brandMark" class="mark">匡</div>
     <div class="bn">契約事業所 住所録</div>
@@ -130,17 +116,11 @@ header{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16
 
 <!-- アカウント設定 -->
 <div class="wrap hide" id="accountView"></div>
-<div class="toast" id="toast"></div>
 
 <script>
 // ===== 設定 =====
 var GAS_URL  = 'https://script.google.com/macros/s/AKfycbzq9OdcXOuvVZaRgYjUKbOzYTMx37Kt-jpJ2w_x91r24CvGqQH9hdS_Gg6PJ3U-jQXgDQ/exec';
 var MAPS_KEY = 'AIzaSyCIBDVU_8B5n4EVDFgpGnB4kbzu-UAKoBw';
-
-// ★ LINE Developers で作成した LIFF ID を入れる（空のままでも通常のWebページとして動作します）
-var LIFF_ID  = '';
-var LS_KEY   = 'td_map_auth';   // ログイン保持用
-var IN_LINE  = false;           // LINEアプリ内で開かれているか
 var LOGO_URL = 'data:image/png;base64,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';
 
 var TOKEN=null, ME=null, SITES=[], KEYS=[], CAN_EDIT=false, BASE='本社', CUR=null, MAPTYPE='roadmap';
@@ -164,43 +144,6 @@ function api(params){
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
-// ===== LIFF =====
-// LINEログインは使いません。init するのは openWindow と closeWindow を
-// 使うためだけで、認証は従来どおり氏名＋パスワードです。
-async function initLiff(){
-  if(!LIFF_ID || typeof liff === 'undefined') return;
-  try{
-    await liff.init({liffId:LIFF_ID});
-    IN_LINE = liff.isInClient();
-    if(IN_LINE) document.getElementById('closeBtn').classList.remove('hide');
-  }catch(e){ /* 初期化に失敗しても通常のWebページとして続行 */ }
-}
-function closeLiff(){ try{ liff.closeWindow() }catch(e){} }
-
-// LINE内蔵ブラウザでは window.open がブロックされることがあるため外部で開く
-function openExternal(url){
-  if(IN_LINE){ try{ liff.openWindow({url:url, external:true}); return }catch(e){} }
-  window.open(url,'_blank');
-}
-
-// ===== トースト =====
-var toastTimer=null;
-function toast(msg){
-  var t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){t.classList.remove('on')},1800);
-}
-
-// ===== ログイン保持 =====
-function saveAuth(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify({t:TOKEN, n:ME.name})) }catch(e){}
-}
-function loadAuth(){
-  try{ return JSON.parse(localStorage.getItem(LS_KEY)||'null') }catch(e){ return null }
-}
-function clearAuth(){ try{ localStorage.removeItem(LS_KEY) }catch(e){} }
-
 // ===== ログイン =====
 async function login(){
   var u=document.getElementById('u').value.trim();
@@ -211,75 +154,27 @@ async function login(){
     var r=await api({action:'login',user:u,pass:p});
     if(!r.ok) return note('loginMsg','err',r.error);
     TOKEN=r.token; ME=r.user;
-    saveAuth();
+    document.getElementById('who').textContent=ME.name;
+    document.getElementById('loginView').classList.add('hide');
+    document.getElementById('listView').classList.remove('hide');
+    document.getElementById('gearBtn').classList.remove('hide');
     closeReset();
-    enterApp();
+    document.getElementById('list').innerHTML='<div class="loading">読み込み中…</div>';
     await load();
   }catch(e){ note('loginMsg','err',e.message) }
-}
-
-// ログイン後の画面遷移（初回ログイン・保存済みログインの両方から呼ばれる）
-function enterApp(){
-  document.getElementById('who').textContent=ME.name;
-  document.getElementById('bootView').classList.add('hide');
-  document.getElementById('loginView').classList.add('hide');
-  document.getElementById('listView').classList.remove('hide');
-  document.getElementById('gearBtn').classList.remove('hide');
-  document.getElementById('list').innerHTML='<div class="loading">読み込み中…</div>';
-}
-
-// ログイン画面に戻す
-function toLogin(prefillName, msg){
-  clearAuth(); TOKEN=null; ME=null; SITES=[]; KEYS=[]; CUR=null;
-  document.getElementById('bootView').classList.add('hide');
-  document.getElementById('listView').classList.add('hide');
-  document.getElementById('detailView').classList.add('hide');
-  document.getElementById('accountView').classList.add('hide');
-  document.getElementById('gearBtn').classList.add('hide');
-  document.getElementById('backBtn').classList.add('hide');
-  document.getElementById('who').textContent='';
-  document.getElementById('ttl').textContent='契約事業所 住所録';
-  document.getElementById('loginView').classList.remove('hide');
-  if(prefillName) document.getElementById('u').value=prefillName;
-  document.getElementById('p').value='';
-  note('loginMsg', msg?'err':'', msg||'');
-  window.scrollTo(0,0);
-}
-
-// ===== 起動 =====
-async function boot(){
-  await initLiff();
-  var a=loadAuth();
-  if(!(a&&a.t)){ toLogin('',''); return }
-  TOKEN=a.t; ME={name:a.n||''};
-  try{
-    var r=await api({action:'list',token:TOKEN});
-    if(r.ok){ enterApp(); applyList(r); return }
-  }catch(e){}
-  toLogin(a.n||'', 'ログインの有効期限が切れました。もう一度ログインしてください。');
 }
 function note(id,cls,html){
   var el=document.getElementById(id);
   el.innerHTML= cls? '<div class="msg '+cls+'">'+html+'</div>' : html;
 }
 
-function applyList(r){
+async function load(){
+  var r=await api({action:'list',token:TOKEN});
+  if(!r.ok){alert(r.error);return}
   SITES=r.sites; KEYS=r.keys; CAN_EDIT=r.canEditKey;
   document.getElementById('cH').textContent=SITES.filter(function(s){return s.base==='本社'}).length;
   document.getElementById('cA').textContent=SITES.filter(function(s){return s.base==='青森支社'}).length;
   render();
-}
-
-async function load(){
-  var name = ME && ME.name;
-  try{
-    var r=await api({action:'list',token:TOKEN});
-    if(!r.ok){ toLogin(name,'ログインの有効期限が切れました。もう一度ログインしてください。'); return }
-    applyList(r);
-  }catch(e){
-    document.getElementById('list').innerHTML=
-      '<div class="empty">通信できませんでした。電波状況を確認して開き直してください。</div>';
-  }
 }
 
 function setBase(b){
@@ -331,26 +226,10 @@ function toggleMap(){
 }
 function routeTo(){
   var d=(CUR.lat&&CUR.lng)?(CUR.lat+','+CUR.lng):CUR.addr;
-  openExternal('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(d));
+  window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(d),'_blank');
 }
-function copyAddr(){ copyText(CUR.addr,'住所をコピーしました') }
-
-// LINE内蔵ブラウザは navigator.clipboard が使えない端末があるため代替手段を用意
-function copyText(text,okMsg){
-  function fallback(){
-    var ta=document.createElement('textarea');
-    ta.value=text;
-    ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select(); ta.setSelectionRange(0,ta.value.length);
-    var ok=false;
-    try{ ok=document.execCommand('copy') }catch(e){}
-    document.body.removeChild(ta);
-    toast(ok?okMsg:'コピーできませんでした。長押しで選択してください');
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(function(){toast(okMsg)},fallback);
-  }else{ fallback() }
+function copyAddr(){
+  navigator.clipboard.writeText(CUR.addr).then(function(){alert('住所をコピーしました')});
 }
 
 // ===== 座標の修正 =====
@@ -395,9 +274,7 @@ function useGPS(){
     note('posMsg','ok','取得しました（誤差およそ '+Math.round(c.accuracy)+' m）');
   },function(err){
     note('posMsg','err', err.code===1
-      ? (IN_LINE
-          ? '位置情報の利用が許可されていません。端末の設定 →「LINE」→「位置情報」を「使用中のみ許可」にしてください'
-          : '位置情報の利用が許可されていません。端末の設定をご確認ください')
+      ? '位置情報の利用が許可されていません。端末の設定をご確認ください'
       : '現在地を取得できませんでした');
   },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
@@ -411,11 +288,10 @@ async function savePos(){
   if(Number(lat)<20||Number(lat)>46||Number(lng)<122||Number(lng)>154){
     if(!confirm('日本国内の範囲から外れています。このまま保存しますか？'))return;
   }
-  var id=CUR.id;
-  var r=await api({action:'saveSite',token:TOKEN,id:id,lat:lat,lng:lng});
+  var r=await api({action:'saveSite',token:TOKEN,id:CUR.id,lat:lat,lng:lng});
   if(!r.ok){return note('posMsg','err',r.error)}
   await load();
-  if(TOKEN) showDetail(id);
+  showDetail(CUR.id);
 }
 
 function showDetail(id){
@@ -506,17 +382,15 @@ async function saveKey(row){
   if(row) p.row=row;
   var r=await api(p);
   if(!r.ok){alert(r.error);return}
-  var id=CUR.id;
   cancelKey();
   await load();
-  if(TOKEN) showDetail(id);
+  showDetail(CUR.id);
 }
 async function delKey(row){
   if(!confirm('この鍵情報を削除しますか？'))return;
-  var id=CUR.id;
   var r=await api({action:'deleteKey',token:TOKEN,row:row});
   if(!r.ok){alert(r.error);return}
-  await load(); if(TOKEN) showDetail(id);
+  await load(); showDetail(CUR.id);
 }
 
 // ===== パスワード再発行 =====
@@ -570,16 +444,8 @@ function showAccount(){
         '<button onclick="showList()">戻る</button>'+
         '<button class="btn-p" style="width:auto" onclick="changePass()">変更する</button>'+
       '</div>'+
-      '<button class="btn-out" onclick="logout()">ログアウト</button>'+
-      '<div style="font-size:11px;color:var(--sub);margin-top:8px">'+
-        'この端末ではログイン状態が保持されます。共用端末で使った場合はログアウトしてください。</div>'+
     '</div>';
   window.scrollTo(0,0);
-}
-
-function logout(){
-  if(!confirm('ログアウトしますか？'))return;
-  toLogin('','');
 }
 
 async function changePass(){
@@ -606,8 +472,6 @@ if(LOGO_URL){
   document.getElementById('brandSub').classList.add('hide');
 }
 document.getElementById('p').addEventListener('keydown',function(e){if(e.key==='Enter')login()});
-
-boot();
 </script>
 </body>
 </html>
