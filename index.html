@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>契約事業所 住所録 | 匡電気管理事務所</title>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<title>事業所 | 匡電気管理事務所</title>
 <style>
 :root{
   --navy:#2E3578; --navy-d:#232a5e; --navy-l:#eceef7;
@@ -69,49 +68,44 @@ button:active{transform:scale(.98)}
 .brand .bs{font-size:12px;color:var(--sub);margin-top:3px}
 .brand .mark{width:60px;height:60px;margin:0 auto 12px;border-radius:14px;background:var(--navy);
   color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700}
-.gear{background:none;border:none;color:#fff;font-size:18px;padding:0 4px;cursor:pointer;line-height:1}
+.gear{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:#fff;
+  font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap}
 .sub{font-size:12px;color:var(--sub);margin-top:10px;text-align:center}
-body{padding-bottom:env(safe-area-inset-bottom)}
-header{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(28,31,51,.92);
-  color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:200;opacity:0;
-  transition:opacity .2s;pointer-events:none;max-width:88%;text-align:center}
-.toast.on{opacity:1}
-.btn-out{color:#a32d2d;border-color:#f0cfcf;background:#fff;width:100%;margin-top:14px}
 </style>
 </head>
 <body>
 
 <header>
   <button class="back hide" id="backBtn" onclick="showList()">‹</button>
-  <h1 id="ttl">契約事業所 住所録</h1>
+  <h1 id="ttl">事業所</h1>
   <span class="who" id="who"></span>
-  <button class="gear hide" id="gearBtn" onclick="showAccount()" title="アカウント設定">&#9881;</button>
-  <button class="gear hide" id="closeBtn" onclick="closeLiff()" title="閉じる">&#10005;</button>
+  <button class="gear hide" id="outBtn" onclick="logout()">ログアウト</button>
 </header>
 
-<!-- 起動時（保存済みログインの確認中） -->
-<div class="wrap" id="bootView">
-  <div class="loading">ログイン情報を確認中…</div>
-</div>
-
 <!-- ログイン -->
-<div class="wrap hide" id="loginView">
+<div class="wrap" id="loginView">
   <div class="brand">
     <div id="brandMark" class="mark">匡</div>
-    <div class="bn">契約事業所 住所録</div>
+    <div class="bn">事業所</div>
     <div class="bs" id="brandSub">匡電気管理事務所</div>
   </div>
   <div class="card">
     <div id="loginMsg"></div>
     <label>氏名</label>
-    <input id="u" autocomplete="username" placeholder="佐藤 英匡">
+    <input id="u" autocomplete="username" autocapitalize="off" autocorrect="off"
+           spellcheck="false" placeholder="佐藤 英匡">
     <label>パスワード</label>
-    <input id="p" type="password" autocomplete="current-password">
+    <input id="p" type="password" autocomplete="current-password" autocapitalize="off"
+           autocorrect="off" spellcheck="false" inputmode="text">
     <div style="height:14px"></div>
     <button class="btn-p" onclick="login()">ログイン</button>
-    <div class="sub"><span class="link" onclick="showReset()">パスワードをお忘れの方</span></div>
+    <div class="sub">
+      <span class="link" onclick="showChange()">パスワードを変更する</span>
+      <span style="color:var(--line);margin:0 8px">|</span>
+      <span class="link" onclick="showReset()">パスワードをお忘れの方</span>
+    </div>
   </div>
+  <div id="changeBox"></div>
   <div id="resetBox"></div>
 </div>
 
@@ -128,19 +122,14 @@ header{padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16
 <!-- 詳細 -->
 <div class="wrap hide" id="detailView"></div>
 
-<!-- アカウント設定 -->
-<div class="wrap hide" id="accountView"></div>
-<div class="toast" id="toast"></div>
 
 <script>
-// ===== 設定 =====
-var GAS_URL  = 'https://script.google.com/macros/s/AKfycbzq9OdcXOuvVZaRgYjUKbOzYTMx37Kt-jpJ2w_x91r24CvGqQH9hdS_Gg6PJ3U-jQXgDQ/exec';
-var MAPS_KEY = 'AIzaSyCIBDVU_8B5n4EVDFgpGnB4kbzu-UAKoBw';
+// ===== ロゴ（Base64埋め込み） =====
+var LOGO_B64 = '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';
 
-// LIFF ID（https://liff.line.me/2010679196-rKo1rLA1）
-var LIFF_ID  = '2010679196-rKo1rLA1';
-var LS_KEY   = 'td_map_auth';   // ログイン保持用
-var IN_LINE  = false;           // LINEアプリ内で開かれているか
+// ===== 設定 =====
+var GAS_URL  = 'https://script.google.com/macros/s/AKfycbxlAcKG4i-yMn6sZilEYnArWg8sVf4Q3KegxpW8OEDm3Uo68wYJKM-bvGsPCjEFFF8AiQ/exec';
+var MAPS_KEY = 'AIzaSyCIBDVU_8B5n4EVDFgpGnB4kbzu-UAKoBw';
 var LOGO_URL = 'data:image/png;base64,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';
 
 var TOKEN=null, ME=null, SITES=[], KEYS=[], CAN_EDIT=false, BASE='本社', CUR=null, MAPTYPE='roadmap';
@@ -161,125 +150,45 @@ function api(params){
   });
 }
 
+function nfkc(s){
+  s=String(s==null?'':s);
+  try{ s=s.normalize('NFKC') }catch(e){}
+  return s;
+}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
-// ===== LIFF =====
-// LINEログインは使いません。init するのは openWindow と closeWindow を
-// 使うためだけで、認証は従来どおり氏名＋パスワードです。
-async function initLiff(){
-  if(!LIFF_ID || typeof liff === 'undefined') return;
-  try{
-    await liff.init({liffId:LIFF_ID});
-    IN_LINE = liff.isInClient();
-    if(IN_LINE) document.getElementById('closeBtn').classList.remove('hide');
-  }catch(e){ /* 初期化に失敗しても通常のWebページとして続行 */ }
-}
-function closeLiff(){ try{ liff.closeWindow() }catch(e){} }
-
-// LINE内蔵ブラウザでは window.open がブロックされることがあるため外部で開く
-function openExternal(url){
-  if(IN_LINE){ try{ liff.openWindow({url:url, external:true}); return }catch(e){} }
-  window.open(url,'_blank');
-}
-
-// ===== トースト =====
-var toastTimer=null;
-function toast(msg){
-  var t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){t.classList.remove('on')},1800);
-}
-
-// ===== ログイン保持 =====
-function saveAuth(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify({t:TOKEN, n:ME.name})) }catch(e){}
-}
-function loadAuth(){
-  try{ return JSON.parse(localStorage.getItem(LS_KEY)||'null') }catch(e){ return null }
-}
-function clearAuth(){ try{ localStorage.removeItem(LS_KEY) }catch(e){} }
-
 // ===== ログイン =====
 async function login(){
-  var u=document.getElementById('u').value.trim();
-  var p=document.getElementById('p').value;
+  var u=nfkc(document.getElementById('u').value).replace(/[\s\u3000]+/g,'');
+  var p=nfkc(document.getElementById('p').value).trim();
   if(!u||!p){return note('loginMsg','err','氏名とパスワードを入力してください')}
   note('loginMsg','','<div class="loading">認証中…</div>');
   try{
     var r=await api({action:'login',user:u,pass:p});
     if(!r.ok) return note('loginMsg','err',r.error);
     TOKEN=r.token; ME=r.user;
-    saveAuth();
+    document.getElementById('who').textContent=ME.name;
+    document.getElementById('loginView').classList.add('hide');
+    document.getElementById('listView').classList.remove('hide');
+    document.getElementById('outBtn').classList.remove('hide');
     closeReset();
-    enterApp();
+    document.getElementById('list').innerHTML='<div class="loading">読み込み中…</div>';
     await load();
   }catch(e){ note('loginMsg','err',e.message) }
-}
-
-// ログイン後の画面遷移（初回ログイン・保存済みログインの両方から呼ばれる）
-function enterApp(){
-  document.getElementById('who').textContent=ME.name;
-  document.getElementById('bootView').classList.add('hide');
-  document.getElementById('loginView').classList.add('hide');
-  document.getElementById('listView').classList.remove('hide');
-  document.getElementById('gearBtn').classList.remove('hide');
-  document.getElementById('list').innerHTML='<div class="loading">読み込み中…</div>';
-}
-
-// ログイン画面に戻す
-function toLogin(prefillName, msg){
-  clearAuth(); TOKEN=null; ME=null; SITES=[]; KEYS=[]; CUR=null;
-  document.getElementById('bootView').classList.add('hide');
-  document.getElementById('listView').classList.add('hide');
-  document.getElementById('detailView').classList.add('hide');
-  document.getElementById('accountView').classList.add('hide');
-  document.getElementById('gearBtn').classList.add('hide');
-  document.getElementById('backBtn').classList.add('hide');
-  document.getElementById('who').textContent='';
-  document.getElementById('ttl').textContent='契約事業所 住所録';
-  document.getElementById('loginView').classList.remove('hide');
-  if(prefillName) document.getElementById('u').value=prefillName;
-  document.getElementById('p').value='';
-  note('loginMsg', msg?'err':'', msg||'');
-  window.scrollTo(0,0);
-}
-
-// ===== 起動 =====
-async function boot(){
-  await initLiff();
-  var a=loadAuth();
-  if(!(a&&a.t)){ toLogin('',''); return }
-  TOKEN=a.t; ME={name:a.n||''};
-  try{
-    var r=await api({action:'list',token:TOKEN});
-    if(r.ok){ enterApp(); applyList(r); return }
-  }catch(e){}
-  toLogin(a.n||'', 'ログインの有効期限が切れました。もう一度ログインしてください。');
 }
 function note(id,cls,html){
   var el=document.getElementById(id);
   el.innerHTML= cls? '<div class="msg '+cls+'">'+html+'</div>' : html;
 }
 
-function applyList(r){
+async function load(){
+  var r=await api({action:'list',token:TOKEN});
+  if(!r.ok){alert(r.error);return}
   SITES=r.sites; KEYS=r.keys; CAN_EDIT=r.canEditKey;
   document.getElementById('cH').textContent=SITES.filter(function(s){return s.base==='本社'}).length;
   document.getElementById('cA').textContent=SITES.filter(function(s){return s.base==='青森支社'}).length;
   render();
-}
-
-async function load(){
-  var name = ME && ME.name;
-  try{
-    var r=await api({action:'list',token:TOKEN});
-    if(!r.ok){ toLogin(name,'ログインの有効期限が切れました。もう一度ログインしてください。'); return }
-    applyList(r);
-  }catch(e){
-    document.getElementById('list').innerHTML=
-      '<div class="empty">通信できませんでした。電波状況を確認して開き直してください。</div>';
-  }
 }
 
 function setBase(b){
@@ -312,10 +221,9 @@ function render(){
 function showList(){
   CUR=null;
   document.getElementById('detailView').classList.add('hide');
-  document.getElementById('accountView').classList.add('hide');
   document.getElementById('listView').classList.remove('hide');
   document.getElementById('backBtn').classList.add('hide');
-  document.getElementById('ttl').textContent='契約事業所 住所録';
+  document.getElementById('ttl').textContent='事業所';
   window.scrollTo(0,0);
 }
 
@@ -331,26 +239,10 @@ function toggleMap(){
 }
 function routeTo(){
   var d=(CUR.lat&&CUR.lng)?(CUR.lat+','+CUR.lng):CUR.addr;
-  openExternal('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(d));
+  window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(d),'_blank');
 }
-function copyAddr(){ copyText(CUR.addr,'住所をコピーしました') }
-
-// LINE内蔵ブラウザは navigator.clipboard が使えない端末があるため代替手段を用意
-function copyText(text,okMsg){
-  function fallback(){
-    var ta=document.createElement('textarea');
-    ta.value=text;
-    ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select(); ta.setSelectionRange(0,ta.value.length);
-    var ok=false;
-    try{ ok=document.execCommand('copy') }catch(e){}
-    document.body.removeChild(ta);
-    toast(ok?okMsg:'コピーできませんでした。長押しで選択してください');
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(function(){toast(okMsg)},fallback);
-  }else{ fallback() }
+function copyAddr(){
+  navigator.clipboard.writeText(CUR.addr).then(function(){alert('住所をコピーしました')});
 }
 
 // ===== 座標の修正 =====
@@ -395,9 +287,7 @@ function useGPS(){
     note('posMsg','ok','取得しました（誤差およそ '+Math.round(c.accuracy)+' m）');
   },function(err){
     note('posMsg','err', err.code===1
-      ? (IN_LINE
-          ? '位置情報の利用が許可されていません。端末の設定 →「LINE」→「位置情報」を「使用中のみ許可」にしてください'
-          : '位置情報の利用が許可されていません。端末の設定をご確認ください')
+      ? '位置情報の利用が許可されていません。端末の設定をご確認ください'
       : '現在地を取得できませんでした');
   },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
@@ -411,11 +301,10 @@ async function savePos(){
   if(Number(lat)<20||Number(lat)>46||Number(lng)<122||Number(lng)>154){
     if(!confirm('日本国内の範囲から外れています。このまま保存しますか？'))return;
   }
-  var id=CUR.id;
-  var r=await api({action:'saveSite',token:TOKEN,id:id,lat:lat,lng:lng});
+  var r=await api({action:'saveSite',token:TOKEN,id:CUR.id,lat:lat,lng:lng});
   if(!r.ok){return note('posMsg','err',r.error)}
   await load();
-  if(TOKEN) showDetail(id);
+  showDetail(CUR.id);
 }
 
 function showDetail(id){
@@ -506,17 +395,15 @@ async function saveKey(row){
   if(row) p.row=row;
   var r=await api(p);
   if(!r.ok){alert(r.error);return}
-  var id=CUR.id;
   cancelKey();
   await load();
-  if(TOKEN) showDetail(id);
+  showDetail(CUR.id);
 }
 async function delKey(row){
   if(!confirm('この鍵情報を削除しますか？'))return;
-  var id=CUR.id;
   var r=await api({action:'deleteKey',token:TOKEN,row:row});
   if(!r.ok){alert(r.error);return}
-  await load(); if(TOKEN) showDetail(id);
+  await load(); showDetail(CUR.id);
 }
 
 // ===== パスワード再発行 =====
@@ -539,8 +426,8 @@ function showReset(){
 function closeReset(){document.getElementById('resetBox').innerHTML=''}
 
 async function doReset(){
-  var u=document.getElementById('r_user').value.trim();
-  var m=document.getElementById('r_mail').value.trim();
+  var u=nfkc(document.getElementById('r_user').value).replace(/[\s\u3000]+/g,'');
+  var m=nfkc(document.getElementById('r_mail').value).trim();
   if(!u||!m) return note('resetMsg','err','氏名とメールアドレスを入力してください');
   note('resetMsg','','<div class="loading" style="padding:10px">送信中…</div>');
   try{
@@ -550,54 +437,66 @@ async function doReset(){
   }catch(e){ note('resetMsg','err',e.message) }
 }
 
-// ===== パスワード変更 =====
-function showAccount(){
-  document.getElementById('listView').classList.add('hide');
-  document.getElementById('detailView').classList.add('hide');
-  document.getElementById('backBtn').classList.remove('hide');
-  document.getElementById('ttl').textContent='アカウント設定';
-  var v=document.getElementById('accountView');
-  v.classList.remove('hide');
-  v.innerHTML=
+// ===== パスワード変更（ログイン画面から） =====
+function showChange(){
+  closeReset();
+  document.getElementById('changeBox').innerHTML=
     '<div class="card">'+
-      '<div style="font-weight:700;font-size:14px">パスワードの変更</div>'+
-      '<div style="font-size:12px;color:var(--sub);margin-top:2px">'+esc(ME.name)+' さん</div>'+
+      '<div style="font-weight:700;font-size:14px;margin-bottom:4px">パスワードの変更</div>'+
+      '<div style="font-size:12px;color:var(--sub)">現在のパスワードをご存じの方はこちらから変更できます。</div>'+
       '<div id="pwMsg" style="margin-top:10px"></div>'+
+      '<label>氏名</label><input id="c_user" placeholder="佐藤 英匡">'+
       '<label>現在のパスワード</label><input id="c_old" type="password" autocomplete="current-password">'+
       '<label>新しいパスワード（6文字以上）</label><input id="c_new" type="password" autocomplete="new-password">'+
       '<label>新しいパスワード（確認）</label><input id="c_new2" type="password" autocomplete="new-password">'+
       '<div class="row">'+
-        '<button onclick="showList()">戻る</button>'+
+        '<button onclick="closeChange()">閉じる</button>'+
         '<button class="btn-p" style="width:auto" onclick="changePass()">変更する</button>'+
       '</div>'+
-      '<button class="btn-out" onclick="logout()">ログアウト</button>'+
-      '<div style="font-size:11px;color:var(--sub);margin-top:8px">'+
-        'この端末ではログイン状態が保持されます。共用端末で使った場合はログアウトしてください。</div>'+
     '</div>';
-  window.scrollTo(0,0);
+  document.getElementById('c_user').value=document.getElementById('u').value;
+  document.getElementById('changeBox').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-
-function logout(){
-  if(!confirm('ログアウトしますか？'))return;
-  toLogin('','');
-}
+function closeChange(){document.getElementById('changeBox').innerHTML=''}
 
 async function changePass(){
+  var us=document.getElementById('c_user').value.trim();
   var o=document.getElementById('c_old').value;
   var n=document.getElementById('c_new').value;
   var n2=document.getElementById('c_new2').value;
-  if(!o||!n) return note('pwMsg','err','すべての欄を入力してください');
+  if(!us||!o||!n) return note('pwMsg','err','すべての欄を入力してください');
   if(n.length<6) return note('pwMsg','err','新しいパスワードは6文字以上にしてください');
   if(n!==n2) return note('pwMsg','err','確認用のパスワードが一致しません');
   note('pwMsg','','<div class="loading" style="padding:10px">変更中…</div>');
   try{
-    var r=await api({action:'changePass',token:TOKEN,oldPass:o,newPass:n});
+    var r=await api({action:'changePass',user:us,oldPass:o,newPass:n});
     if(!r.ok) return note('pwMsg','err',r.error);
-    note('pwMsg','ok','パスワードを変更しました。次回から新しいパスワードでログインしてください。');
+    note('pwMsg','ok','パスワードを変更しました。新しいパスワードでログインしてください。');
     document.getElementById('c_old').value='';
     document.getElementById('c_new').value='';
     document.getElementById('c_new2').value='';
+    document.getElementById('p').value='';
   }catch(e){ note('pwMsg','err',e.message) }
+}
+
+// ===== ログアウト =====
+function logout(){
+  if(!confirm('ログアウトしますか？'))return;
+  TOKEN=null; ME=null; SITES=[]; KEYS=[]; CUR=null; CAN_EDIT=false;
+  document.getElementById('p').value='';
+  document.getElementById('q').value='';
+  document.getElementById('list').innerHTML='';
+  document.getElementById('detailView').innerHTML='';
+  document.getElementById('who').textContent='';
+  document.getElementById('loginMsg').innerHTML='';
+  closeChange(); closeReset();
+  document.getElementById('outBtn').classList.add('hide');
+  document.getElementById('backBtn').classList.add('hide');
+  document.getElementById('detailView').classList.add('hide');
+  document.getElementById('listView').classList.add('hide');
+  document.getElementById('loginView').classList.remove('hide');
+  document.getElementById('ttl').textContent='事業所';
+  window.scrollTo(0,0);
 }
 
 if(LOGO_URL){
@@ -606,8 +505,6 @@ if(LOGO_URL){
   document.getElementById('brandSub').classList.add('hide');
 }
 document.getElementById('p').addEventListener('keydown',function(e){if(e.key==='Enter')login()});
-
-boot();
 </script>
 </body>
 </html>
