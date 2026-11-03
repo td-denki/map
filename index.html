@@ -134,17 +134,53 @@ var LOGO_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAkQAAABqCAMAAABqB7
 
 var TOKEN=null, ME=null, SITES=[], KEYS=[], CAN_EDIT=false, BASE='本社', CUR=null, MAPTYPE='roadmap';
 
-// ===== JSONP =====
+// ===== 通信 =====
+// fetch を本命、JSONP を保険にする。
+// 広告ブロッカーやトラッキング防止機能は script タグでの
+// 外部ドメイン読み込みを遮断することがあるため、
+// 同じことができる fetch を先に試す。
+function qstr(params){
+  return Object.keys(params).map(function(k){
+    return encodeURIComponent(k)+'='+encodeURIComponent(params[k]==null?'':params[k]);
+  }).join('&');
+}
+
 function api(params){
+  return apiFetch(params).catch(function(e){
+    if(e && e.__server) throw e;      // サーバーが返したエラーはそのまま
+    return apiJsonp(params);          // 通信できなかった場合だけ保険へ
+  });
+}
+
+function apiFetch(params){
+  var ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  var t = setTimeout(function(){ if(ctl) ctl.abort() }, 25000);
+  var opt = {method:'GET', redirect:'follow'};
+  if(ctl) opt.signal = ctl.signal;
+
+  return fetch(GAS_URL+'?'+qstr(params), opt).then(function(r){
+    clearTimeout(t);
+    if(!r.ok){
+      var err=new Error('サーバーエラー ('+r.status+')'); err.__server=true; throw err;
+    }
+    return r.text();
+  }).then(function(txt){
+    try{ return JSON.parse(txt) }
+    catch(e){ throw new Error('応答を解釈できませんでした') }
+  }).catch(function(e){
+    clearTimeout(t);
+    throw e;
+  });
+}
+
+function apiJsonp(params){
   return new Promise(function(res,rej){
     var cb='cb_'+Math.random().toString(36).slice(2);
     var t=setTimeout(function(){cleanup();rej(new Error('タイムアウト'))},25000);
     window[cb]=function(d){clearTimeout(t);cleanup();res(d)};
     function cleanup(){try{delete window[cb]}catch(e){}; if(s.parentNode)s.parentNode.removeChild(s)}
-    var qs=Object.keys(params).map(function(k){
-      return encodeURIComponent(k)+'='+encodeURIComponent(params[k]==null?'':params[k])}).join('&');
     var s=document.createElement('script');
-    s.src=GAS_URL+'?'+qs+'&callback='+cb;
+    s.src=GAS_URL+'?'+qstr(params)+'&callback='+cb;
     s.onerror=function(){clearTimeout(t);cleanup();rej(new Error('通信エラー'))};
     document.body.appendChild(s);
   });
